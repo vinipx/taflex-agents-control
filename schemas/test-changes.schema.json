@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TestChanges",
+  "description": "Schema for the test-changes.json artifact — records file changes made during the run.",
+  "type": "object",
+  "required": ["schema_version", "generated_at", "mode", "changes"],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string"
+    },
+    "changes": {
+      "type": "array",
+      "description": "List of file change records.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {"type": "string"},
+          "action": {"type": "string", "enum": ["created", "updated", "deleted"]},
+          "bytes_written": {"type": "integer"}
+        }
+      }
+    },
+    "reason": {
+      "type": "string",
+      "description": "Explanation when no changes were made."
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExecutionSummary",
+  "description": "Schema for the execution-summary.json artifact — overall run status and per-step results.",
+  "type": "object",
+  "required": ["schema_version", "generated_at", "mode", "status", "goal", "target_repo", "target_branch"],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["success", "failure"],
+      "description": "Overall run outcome."
+    },
+    "goal": {
+      "type": "string"
+    },
+    "target_repo": {
+      "type": "string"
+    },
+    "target_branch": {
+      "type": "string"
+    },
+    "smoke_results": {
+      "type": "object",
+      "description": "Per-step smoke test results keyed by step name."
+    },
+    "secrets_redacted": {
+      "type": "boolean"
+    },
+    "auto_merge_performed": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": true
+}

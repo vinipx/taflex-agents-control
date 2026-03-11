@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MaintenanceActions",
+  "description": "Schema for the maintenance-actions.json artifact — autonomous maintenance steps taken.",
+  "type": "object",
+  "required": ["schema_version", "generated_at", "mode", "actions"],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string"
+    },
+    "actions": {
+      "type": "array",
+      "description": "List of maintenance action records.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {"type": "string"},
+          "path": {"type": "string"},
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "reason": {
+      "type": "string",
+      "description": "Explanation when no actions were taken."
+    }
+  },
+  "additionalProperties": true
+}
