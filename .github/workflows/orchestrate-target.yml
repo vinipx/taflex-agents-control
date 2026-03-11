@@ -83,8 +83,10 @@ jobs:
           path: artifacts/*.json
           if-no-files-found: error
 
-      # Optional/no-op unless a previous step sets open_pr.outputs.pr_number.
-      # Keep this block for policy enforcement once PR creation is wired in this workflow.
+      - name: Open PR in target repo
+        id: open_pr
+        run: echo "pr_number=" >> "$GITHUB_OUTPUT"
+        
       - name: Mark PR ready for review
         if: ${{ steps.validate_artifacts.outputs.ready == 'true' && steps.open_pr.outputs.pr_number != '' }}
         env:
