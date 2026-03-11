@@ -356,8 +356,9 @@ Configure in `vinipx/taflex-agents-control`:
 2. Never force-push protected branches.
 3. Never merge PRs automatically in early POC stage.
 4. Always attach execution and allure artifacts.
-5. If no changes required, skip PR creation and publish summary only.
-6. If test run fails catastrophically (infrastructure error), mark as infra-failure and stop write operations.
+5. When all task acceptance criteria pass and required artifacts are valid, convert PR from Draft to Ready for review before final handoff.
+6. If no changes required, skip PR creation and publish summary only.
+7. If test run fails catastrophically (infrastructure error), mark as infra-failure and stop write operations.
 
 ---
 
