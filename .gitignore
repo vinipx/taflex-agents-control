@@ -1,0 +1,8 @@
+# Generated artifacts from orchestrator runs (uploaded via actions/upload-artifact)
+artifacts/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/

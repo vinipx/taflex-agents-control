@@ -28,6 +28,14 @@ jobs:
       - name: Checkout control repo
         uses: actions/checkout@v4
 
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.TARGET_REPO }}
+          token: ${{ env.TARGET_PUSH_TOKEN }}
+          path: workspace/target
+          ref: ${{ github.event.inputs.target_branch || env.TARGET_DEFAULT_BRANCH }}
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -40,4 +48,15 @@ jobs:
           TARGET_PUSH_TOKEN: ${{ env.TARGET_PUSH_TOKEN }}
           ORCHESTRATOR_GOAL: ${{ github.event.inputs.goal }}
           ORCHESTRATOR_BRANCH_OVERRIDE: ${{ github.event.inputs.target_branch }}
-        run: python scripts/run_orchestrator.py
+          TARGET_REPO_PATH: ${{ github.workspace }}/workspace/target
+        run: |
+          mkdir -p artifacts
+          python scripts/run_orchestrator.py
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orchestration-artifacts
+          path: artifacts/*.json
+          if-no-files-found: warn
