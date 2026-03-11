@@ -34,8 +34,12 @@ jobs:
           repository: ${{ env.TARGET_REPO }}
           token: ${{ env.TARGET_PUSH_TOKEN }}
           path: workspace/target
+<<<<<<< copilot/add-mcp-smoke-observability
+          ref: ${{ github.event.inputs.target_branch || env.TARGET_DEFAULT_BRANCH }}
+=======
           fetch-depth: 1
           ref: ${{ github.event.inputs.target_branch != '' && github.event.inputs.target_branch || env.TARGET_DEFAULT_BRANCH }}
+>>>>>>> main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -49,6 +53,20 @@ jobs:
           TARGET_PUSH_TOKEN: ${{ env.TARGET_PUSH_TOKEN }}
           ORCHESTRATOR_GOAL: ${{ github.event.inputs.goal }}
           ORCHESTRATOR_BRANCH_OVERRIDE: ${{ github.event.inputs.target_branch }}
+<<<<<<< copilot/add-mcp-smoke-observability
+          TARGET_REPO_PATH: ${{ github.workspace }}/workspace/target
+        run: |
+          mkdir -p artifacts
+          python scripts/run_orchestrator.py
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orchestration-artifacts
+          path: artifacts/*.json
+          if-no-files-found: warn
+=======
           ORCHESTRATOR_REPO_PATH: workspace/target
         run: python scripts/run_orchestrator.py
 
@@ -93,3 +111,4 @@ jobs:
           GH_TOKEN: ${{ env.TARGET_PUSH_TOKEN }}
           PR_NUMBER: ${{ steps.open_pr.outputs.pr_number }}
         run: gh pr ready "$PR_NUMBER" --repo ${{ env.TARGET_REPO }}
+>>>>>>> main
