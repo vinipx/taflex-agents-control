@@ -28,6 +28,15 @@ jobs:
       - name: Checkout control repo
         uses: actions/checkout@v4
 
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.TARGET_REPO }}
+          token: ${{ env.TARGET_PUSH_TOKEN }}
+          path: workspace/target
+          fetch-depth: 1
+          ref: ${{ github.event.inputs.target_branch != '' && github.event.inputs.target_branch || env.TARGET_DEFAULT_BRANCH }}
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -40,4 +49,45 @@ jobs:
           TARGET_PUSH_TOKEN: ${{ env.TARGET_PUSH_TOKEN }}
           ORCHESTRATOR_GOAL: ${{ github.event.inputs.goal }}
           ORCHESTRATOR_BRANCH_OVERRIDE: ${{ github.event.inputs.target_branch }}
+          ORCHESTRATOR_REPO_PATH: workspace/target
         run: python scripts/run_orchestrator.py
+
+      - name: Validate required artifacts
+        id: validate_artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            "artifacts/test-plan.json"
+            "artifacts/test-changes.json"
+            "artifacts/execution-summary.json"
+            "artifacts/allure-summary.json"
+            "artifacts/maintenance-actions.json"
+          )
+
+          for f in "${required[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "[ERROR] Missing required artifact: $f"
+              exit 1
+            fi
+            python -m json.tool "$f" > /dev/null
+          done
+
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload orchestrator artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orchestrator-artifacts-${{ github.run_id }}
+          path: artifacts/*.json
+          if-no-files-found: error
+
+      # Optional/no-op unless a previous step sets open_pr.outputs.pr_number.
+      # Keep this block for policy enforcement once PR creation is wired in this workflow.
+      - name: Mark PR ready for review
+        if: ${{ steps.validate_artifacts.outputs.ready == 'true' && steps.open_pr.outputs.pr_number != '' }}
+        env:
+          GH_TOKEN: ${{ env.TARGET_PUSH_TOKEN }}
+          PR_NUMBER: ${{ steps.open_pr.outputs.pr_number }}
+        run: gh pr ready "$PR_NUMBER" --repo ${{ env.TARGET_REPO }}
