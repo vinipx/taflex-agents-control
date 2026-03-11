@@ -1,0 +1,43 @@
+name: Orchestrate Target Repository
+
+on:
+  workflow_dispatch:
+    inputs:
+      goal:
+        description: "Task or goal to orchestrate (e.g. 'generate tests for module X')"
+        required: true
+        type: string
+      target_branch:
+        description: "Override target branch in target repo (optional, defaults to TARGET_DEFAULT_BRANCH)"
+        required: false
+        type: string
+        default: ""
+
+env:
+  TARGET_REPO: vinipx/taflex-python-modular
+  TARGET_DEFAULT_BRANCH: ${{ vars.TARGET_DEFAULT_BRANCH }}
+  TARGET_PUSH_TOKEN: ${{ secrets.TARGET_PUSH_TOKEN }}
+
+jobs:
+  orchestrate:
+    name: Run Orchestrator
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout control repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run orchestrator script
+        env:
+          TARGET_REPO: ${{ env.TARGET_REPO }}
+          TARGET_DEFAULT_BRANCH: ${{ env.TARGET_DEFAULT_BRANCH }}
+          TARGET_PUSH_TOKEN: ${{ env.TARGET_PUSH_TOKEN }}
+          ORCHESTRATOR_GOAL: ${{ github.event.inputs.goal }}
+          ORCHESTRATOR_BRANCH_OVERRIDE: ${{ github.event.inputs.target_branch }}
+        run: python scripts/run_orchestrator.py
