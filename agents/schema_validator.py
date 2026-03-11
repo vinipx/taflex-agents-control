@@ -67,7 +67,10 @@ def validate_artifact(
         import jsonschema  # type: ignore[import]
 
         validator = jsonschema.Draft7Validator(schema)
-        errors = [str(e.message) for e in sorted(validator.iter_errors(data), key=str)]
+        errors = [
+            str(e.message)
+            for e in sorted(validator.iter_errors(data), key=lambda e: list(e.schema_path))
+        ]
         is_valid = len(errors) == 0
         if is_valid:
             logger.info("[SCHEMA] '%s' is valid.", artifact_name)

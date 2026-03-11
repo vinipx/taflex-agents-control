@@ -64,7 +64,7 @@ class MCPClient:
         self,
         path: str,
         glob_pattern: Optional[str] = None,
-    ) -> list[str]:
+    ) -> Optional[list[str]]:
         """
         List files/directories at *path*, optionally filtered by *glob_pattern*.
 
@@ -77,8 +77,8 @@ class MCPClient:
 
         Returns
         -------
-        list[str]
-            Sorted list of entry names found at *path*.
+        Optional[list[str]]
+            Sorted list of entry names found at *path*, or None on error.
         """
         mode = _MCP_PREFIX if self._mcp_available else _FS_PREFIX
         abs_path = self._resolve(path)
@@ -88,14 +88,14 @@ class MCPClient:
         if not os.path.isdir(abs_path):
             logger.warning("%s list_files: path not found: %s", mode, abs_path)
             print(f"{mode} list_files WARN: path not found: {abs_path}", flush=True)
-            return []
+            return None
 
         try:
             entries = sorted(os.listdir(abs_path))
         except OSError as exc:
             logger.error("%s list_files error: %s", mode, exc)
             print(f"{mode} list_files ERROR: {exc}", flush=True)
-            return []
+            return None
 
         if glob_pattern:
             entries = [e for e in entries if fnmatch.fnmatch(e, glob_pattern)]
@@ -108,7 +108,7 @@ class MCPClient:
     # read_file
     # ------------------------------------------------------------------
 
-    def read_file(self, path: str) -> str:
+    def read_file(self, path: str) -> Optional[str]:
         """
         Read and return the contents of *path* as a string.
 
@@ -119,8 +119,8 @@ class MCPClient:
 
         Returns
         -------
-        str
-            File contents, or empty string on error.
+        Optional[str]
+            File contents, or None on error (distinguishes from a legitimately empty file).
         """
         mode = _MCP_PREFIX if self._mcp_available else _FS_PREFIX
         abs_path = self._resolve(path)
@@ -136,7 +136,7 @@ class MCPClient:
         except OSError as exc:
             logger.error("%s read_file error: %s", mode, exc)
             print(f"{mode} read_file ERROR: {exc}", flush=True)
-            return ""
+            return None
 
     # ------------------------------------------------------------------
     # write_file
@@ -191,14 +191,20 @@ class MCPClient:
     # execute_tests
     # ------------------------------------------------------------------
 
+    # Allowlist of command prefixes permitted in execute_tests
+    _ALLOWED_TEST_COMMANDS: tuple[str, ...] = ("pytest", "python -m pytest", "python3 -m pytest")
+
     def execute_tests(self, command: str) -> dict:
         """
         Execute a test command and return structured results.
 
+        Only commands starting with an allowed prefix (``pytest``,
+        ``python -m pytest``) are permitted to prevent shell injection.
+
         Parameters
         ----------
         command:
-            Shell command string to execute (e.g. ``"pytest tests/ --tb=short"``).
+            Test command string to execute (e.g. ``"pytest tests/ --tb=short"``).
 
         Returns
         -------
@@ -206,13 +212,33 @@ class MCPClient:
             ``{"return_code": int, "stdout": str, "stderr": str}``
         """
         mode = _MCP_PREFIX if self._mcp_available else _FS_PREFIX
+
+        # Guard: only allow known safe test-runner commands
+        stripped = command.strip()
+        if not any(stripped.startswith(prefix) for prefix in self._ALLOWED_TEST_COMMANDS):
+            reason = (
+                f"Command '{stripped}' is not in the allowed test-command list: "
+                f"{self._ALLOWED_TEST_COMMANDS}"
+            )
+            logger.error("%s execute_tests BLOCKED: %s", mode, reason)
+            print(f"{mode} execute_tests BLOCKED: {reason}", flush=True)
+            return {"return_code": -1, "stdout": "", "stderr": reason}
+
         logger.info("%s execute_tests: %s", mode, command)
         print(f"{mode} execute_tests: {command}", flush=True)
 
+        # Split into a list of tokens so shell=False can be used safely
+        import shlex
+        try:
+            args = shlex.split(stripped)
+        except ValueError as exc:
+            logger.error("%s execute_tests: could not parse command: %s", mode, exc)
+            return {"return_code": -1, "stdout": "", "stderr": str(exc)}
+
         try:
             result = subprocess.run(
-                command,
-                shell=True,  # noqa: S602
+                args,
+                shell=False,
                 capture_output=True,
                 text=True,
                 cwd=self.base_path,

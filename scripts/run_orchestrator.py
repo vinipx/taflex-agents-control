@@ -123,7 +123,7 @@ def run_mcp_smoke(target_path: str) -> tuple[bool, dict]:
         return False, results
 
     raw = mcp_client.read_file("mcp.json")
-    if raw:
+    if raw is not None:
         try:
             parsed = json.loads(raw)
             results["read_mcp_json"]["status"] = "PASS"
@@ -140,9 +140,9 @@ def run_mcp_smoke(target_path: str) -> tuple[bool, dict]:
             results["read_mcp_json"]["error"] = str(exc)
             return False, results
     else:
-        print(f"[SMOKE] FAIL: read_file mcp.json returned empty content", flush=True)
+        print("[SMOKE] FAIL: read_file mcp.json returned None (file not readable)", flush=True)
         results["read_mcp_json"]["status"] = "FAIL"
-        results["read_mcp_json"]["error"] = "Empty content returned"
+        results["read_mcp_json"]["error"] = "None returned by read_file"
         return False, results
 
     smoke_passed = (
@@ -188,7 +188,7 @@ def run_mcp_integration(target_path: str) -> tuple[bool, dict]:
     print(f"{client_label} --- Step 2: read_file ---", flush=True)
     read_target = "mcp.json"
     raw = mcp_client.read_file(read_target)
-    if raw:
+    if raw is not None:
         results["read_file"]["status"] = "PASS"
         results["read_file"]["bytes"] = len(raw)
         print(f"[INTEGRATION] PASS: read_file '{read_target}' ({len(raw)} bytes)", flush=True)
@@ -250,7 +250,7 @@ def emit_artifacts(
 
     run_status = "success" if overall_success else "failure"
 
-    combined_results = smoke_results or integration_results or {}
+    mode_results = smoke_results or integration_results or {}
 
     writes_planned = integration_mode
     actions: list[str]
@@ -288,7 +288,7 @@ def emit_artifacts(
             "goal": goal,
             "target_repo": target_repo,
             "target_branch": effective_branch,
-            "smoke_results": combined_results,
+            "smoke_results": mode_results,
             "secrets_redacted": True,
             "auto_merge_performed": False,
         },
